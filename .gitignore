@@ -1,3 +1,6 @@
+.venv
+mise.toml
+
 # OSX thumbnails cache file
 .DS_Store
 
