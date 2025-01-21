@@ -4,6 +4,10 @@
 #define VIAL_UNLOCK_COMBO_ROWS {0, 0}
 #define VIAL_UNLOCK_COMBO_COLS {0, 1}
 
+// #define MOD_TAP_INTERUPT
+// #define PERMISSIVE_HOLD
+#define TAPPING_FORCE_HOLD
+
 #define MOUSEKEY_DELAY             0
 #define MOUSEKEY_INTERVAL          16
 #define MOUSEKEY_MOVE_DELTA        1
