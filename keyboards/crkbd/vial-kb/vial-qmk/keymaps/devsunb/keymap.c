@@ -12,6 +12,8 @@ enum keycodes {
     OS_SFT,
     OS_CMD,
     OS_ALT,
+    OS_CTL,
+    OS_RST,
 };
 
 #define LT_RCMD LT(L_NAV, KC_RCMD)
@@ -23,7 +25,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,--------------------------------------------------------------.  ,--------------------------------------------------------------.
        KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,  MO_RGB,     MO_RGB,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_LBRC,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-      KC_LCTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,  KC_ESC,    XXXXXXX,    KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,
+       OS_CTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,  OS_RST,    XXXXXXX,    KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,
   //|--------+--------+--------+--------+--------+--------+--------'  `--------+--------+--------+--------+--------+--------+--------|
        OS_SFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_RBRC,
   //|--------+--------+--------+--------+--------+--------+--------.  ,--------+--------+--------+--------+--------+--------+--------|
@@ -75,12 +77,14 @@ typedef enum {
     os_down_used,
 } oneshot_state;
 
+oneshot_state os_ctl_state = os_up_unqueued;
 oneshot_state os_alt_state = os_up_unqueued;
 oneshot_state os_cmd_state = os_up_unqueued;
 oneshot_state os_sft_state = os_up_unqueued;
 
 bool is_oneshot_ignored_key(uint16_t keycode) {
     switch (keycode) {
+    case OS_CTL:
     case OS_ALT:
     case OS_CMD:
     case OS_SFT:
@@ -118,7 +122,13 @@ void update_oneshot(
             }
         }
     } else {
-        if (!record->event.pressed) {
+        if (record->event.pressed) {
+            if (keycode == OS_RST && *state != os_up_unqueued) {
+                // Cancel oneshot on designated cancel keydown.
+                *state = os_up_unqueued;
+                unregister_code(mod);
+            }
+        } else {
             if (!is_oneshot_ignored_key(keycode)) {
                 switch (*state) {
                 case os_down_unused:
@@ -137,6 +147,10 @@ void update_oneshot(
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    update_oneshot(
+        &os_ctl_state, KC_LCTL, OS_CTL,
+        keycode, record
+    );
     update_oneshot(
         &os_alt_state, KC_LALT, OS_ALT,
         keycode, record
