@@ -73,6 +73,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 typedef enum {
     os_up_unqueued,
     os_up_queued,
+    os_up_used,
     os_down_unused,
     os_down_used,
 } oneshot_state;
@@ -128,19 +129,22 @@ void update_oneshot(
                 *state = os_up_unqueued;
                 unregister_code(mod);
             }
-        } else {
             if (!is_oneshot_ignored_key(keycode)) {
                 switch (*state) {
                 case os_down_unused:
                     *state = os_down_used;
                     break;
                 case os_up_queued:
-                    *state = os_up_unqueued;
-                    unregister_code(mod);
+                    *state = os_up_used;
                     break;
                 default:
                     break;
                 }
+            }
+        } else {
+            if (!is_oneshot_ignored_key(keycode) && *state == os_up_used) {
+                *state = os_up_unqueued;
+                unregister_code(mod);
             }
         }
     }
