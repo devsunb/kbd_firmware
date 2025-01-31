@@ -10,12 +10,11 @@ enum layers {
 enum keycodes {
     CMD_SPC = SAFE_RANGE,
     OS_SFT,
-    OS_CMD,
     OS_ALT,
     OS_CTL,
-    OS_RST,
 };
 
+#define ESC_CMD MT(MOD_LGUI, KC_ESC)
 #define LT_RCMD LT(L_NAV, KC_RCMD)
 #define TG_MOU  TG(L_MOUSE)
 #define MO_RGB  MO(L_RGB)
@@ -25,11 +24,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,--------------------------------------------------------------.  ,--------------------------------------------------------------.
        KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,  MO_RGB,     MO_RGB,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_LBRC,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-       OS_CTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,  OS_RST,     OS_RST,    KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,
+       OS_CTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G, CW_TOGG,    CW_TOGG,    KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,
   //|--------+--------+--------+--------+--------+--------+--------'  `--------+--------+--------+--------+--------+--------+--------|
        OS_SFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_RBRC,
   //|--------+--------+--------+--------+--------+--------+--------.  ,--------+--------+--------+--------+--------+--------+--------|
-                                           OS_ALT,  KC_SPC,  OS_CMD,     KC_ENT, LT_RCMD, KC_BSPC
+                                           OS_ALT,  KC_SPC, ESC_CMD,     KC_ENT, LT_RCMD, KC_BSPC
                                       //`--------------------------'  `--------------------------'
   ),
 
@@ -39,7 +38,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
       _______, KC_VOLD, KC_VOLU, KC_MUTE, XXXXXXX, XXXXXXX, _______,    _______, KC_LEFT, KC_DOWN,   KC_UP, KC_RGHT,  TG_MOU,  KC_GRV,
   //|--------+--------+--------+--------+--------+--------+--------'  `--------+--------+--------+--------+--------+--------+--------|
-      _______, KC_MPRV, KC_MNXT, KC_MPLY, XXXXXXX, XXXXXXX,                      KC_HOME, KC_PGDN, KC_PGUP,  KC_END, KC_BSLS, CW_TOGG,
+      _______, KC_MPRV, KC_MNXT, KC_MPLY, XXXXXXX, XXXXXXX,                      KC_HOME, KC_PGDN, KC_PGUP,  KC_END, KC_BSLS, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------.  ,--------+--------+--------+--------+--------+--------+--------|
                                           _______, _______, _______,    _______, _______, _______
                                       //`--------------------------'  `--------------------------'
@@ -49,7 +48,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,--------------------------------------------------------------.  ,--------------------------------------------------------------.
         KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6, _______,    _______,   KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,  KC_F12,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-      _______, _______, _______, _______, _______, _______, _______,    _______, MS_LEFT, MS_DOWN,   MS_UP, MS_RGHT,  TG_MOU, XXXXXXX,
+      _______, XXXXXXX, MS_ACL2, MS_ACL1, MS_ACL0, XXXXXXX, _______,    _______, MS_LEFT, MS_DOWN,   MS_UP, MS_RGHT,  TG_MOU, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------'  `--------+--------+--------+--------+--------+--------+--------|
       _______, _______, _______, _______, _______, _______,                      MS_WHLL, MS_WHLD, MS_WHLU, MS_WHLR, CMD_SPC, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------.  ,--------+--------+--------+--------+--------+--------+--------|
@@ -80,15 +79,14 @@ typedef enum {
 
 oneshot_state os_ctl_state = os_up_unqueued;
 oneshot_state os_alt_state = os_up_unqueued;
-oneshot_state os_cmd_state = os_up_unqueued;
 oneshot_state os_sft_state = os_up_unqueued;
 
 bool is_oneshot_ignored_key(uint16_t keycode) {
     switch (keycode) {
     case OS_CTL:
     case OS_ALT:
-    case OS_CMD:
     case OS_SFT:
+    case ESC_CMD:
     case LT_RCMD:
         return true;
     default:
@@ -124,11 +122,6 @@ void update_oneshot(
         }
     } else {
         if (record->event.pressed) {
-            if (keycode == OS_RST && *state != os_up_unqueued) {
-                // Cancel oneshot on designated cancel keydown.
-                *state = os_up_unqueued;
-                unregister_code(mod);
-            }
             if (!is_oneshot_ignored_key(keycode)) {
                 switch (*state) {
                 case os_down_unused:
@@ -142,7 +135,8 @@ void update_oneshot(
                 }
             }
         } else {
-            if (!is_oneshot_ignored_key(keycode) && *state == os_up_used) {
+            if ((keycode == ESC_CMD && *state != os_up_unqueued) ||
+                (!is_oneshot_ignored_key(keycode) && *state == os_up_used)) {
                 *state = os_up_unqueued;
                 unregister_code(mod);
             }
@@ -157,10 +151,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     );
     update_oneshot(
         &os_alt_state, KC_LALT, OS_ALT,
-        keycode, record
-    );
-    update_oneshot(
-        &os_cmd_state, KC_LCMD, OS_CMD,
         keycode, record
     );
     update_oneshot(

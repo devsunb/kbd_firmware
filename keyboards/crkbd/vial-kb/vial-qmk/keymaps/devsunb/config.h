@@ -8,11 +8,21 @@
 #define PERMISSIVE_HOLD
 #define TAPPING_FORCE_HOLD
 
-#define MOUSEKEY_DELAY             0
-#define MOUSEKEY_INTERVAL          16
-#define MOUSEKEY_MOVE_DELTA        1
-#define MOUSEKEY_MAX_SPEED         16
-#define MOUSEKEY_TIME_TO_MAX       32
-#define MOUSEKEY_WHEEL_DELAY       0
-#define MOUSEKEY_WHEEL_INTERVAL    64
-#define MOUSEKEY_WHEEL_TIME_TO_MAX 64
+#define MK_3_SPEED
+#define MK_MOMENTARY_ACCEL
+#define MK_C_OFFSET_UNMOD   1
+#define MK_C_INTERVAL_UNMOD 8
+#define MK_C_OFFSET_0       1
+#define MK_C_INTERVAL_0     1
+#define MK_C_OFFSET_1       2
+#define MK_C_INTERVAL_1     1
+#define MK_C_OFFSET_2       8
+#define MK_C_INTERVAL_2     1
+#define MK_W_OFFSET_UNMOD   1
+#define MK_W_INTERVAL_UNMOD 128
+#define MK_W_OFFSET_0       1
+#define MK_W_INTERVAL_0     64
+#define MK_W_OFFSET_1       1
+#define MK_W_INTERVAL_1     32
+#define MK_W_OFFSET_2       1
+#define MK_W_INTERVAL_2     4
