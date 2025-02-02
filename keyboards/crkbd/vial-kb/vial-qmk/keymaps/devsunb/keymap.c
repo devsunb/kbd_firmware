@@ -8,11 +8,7 @@ enum layers {
 };
 
 enum keycodes {
-    CMD_SPC = SAFE_RANGE,
-    OS_SFT,
-    OS_CMD,
-    OS_ALT,
-    OS_CTL,
+    HOMEROW = SAFE_RANGE,
 };
 
 #define LT_RCMD LT(L_NAV, KC_RCMD)
@@ -24,11 +20,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,--------------------------------------------------------------.  ,--------------------------------------------------------------.
        KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,  MO_RGB,     MO_RGB,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_LBRC,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-       OS_CTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,  KC_ESC,       KC_B,    KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,
+      KC_LCTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,  KC_ESC,       KC_B,    KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,
   //|--------+--------+--------+--------+--------+--------+--------'  `--------+--------+--------+--------+--------+--------+--------|
-       OS_SFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_RBRC,
+      KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_RBRC,
   //|--------+--------+--------+--------+--------+--------+--------.  ,--------+--------+--------+--------+--------+--------+--------|
-                                           OS_ALT,  KC_SPC,  OS_CMD,     KC_ENT, LT_RCMD, KC_BSPC
+                                          KC_LALT, KC_LCMD,  KC_SPC,     KC_ENT, LT_RCMD, KC_BSPC
                                       //`--------------------------'  `--------------------------'
   ),
 
@@ -50,7 +46,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
       _______, XXXXXXX, MS_ACL2, MS_ACL1, MS_ACL0, XXXXXXX, _______,    _______, MS_LEFT, MS_DOWN,   MS_UP, MS_RGHT,  TG_MOU, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------'  `--------+--------+--------+--------+--------+--------+--------|
-      _______, _______, _______, _______, _______, _______,                      MS_WHLL, MS_WHLD, MS_WHLU, MS_WHLR, CMD_SPC, XXXXXXX,
+      _______, _______, _______, _______, _______, _______,                      MS_WHLL, MS_WHLD, MS_WHLU, MS_WHLR, HOMEROW, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------.  ,--------+--------+--------+--------+--------+--------+--------|
                                           _______, _______, _______,    MS_BTN1, MS_BTN2, MS_BTN3
                                       //`--------------------------'  `--------------------------'
@@ -69,111 +65,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   )
 };
 
-typedef enum {
-    os_up_unqueued,
-    os_up_queued,
-    os_up_used,
-    os_down_unused,
-    os_down_used,
-} oneshot_state;
-
-oneshot_state os_ctl_state = os_up_unqueued;
-oneshot_state os_alt_state = os_up_unqueued;
-oneshot_state os_cmd_state = os_up_unqueued;
-oneshot_state os_sft_state = os_up_unqueued;
-
-bool is_oneshot_ignored_key(uint16_t keycode) {
-    switch (keycode) {
-    case OS_CTL:
-    case OS_ALT:
-    case OS_CMD:
-    case OS_SFT:
-    case LT_RCMD:
-        return true;
-    default:
-        return false;
-    }
-}
-
-void update_oneshot(
-    oneshot_state *state,
-    uint16_t mod,
-    uint16_t trigger,
-    uint16_t keycode,
-    keyrecord_t *record
-) {
-    if (keycode == trigger) {
-        if (record->event.pressed) {
-            if (*state == os_up_unqueued) {
-                register_code(mod);
-            }
-            *state = os_down_unused;
-        } else {
-            switch (*state) {
-            case os_down_unused:
-                *state = os_up_queued;
-                break;
-            case os_down_used:
-                *state = os_up_unqueued;
-                unregister_code(mod);
-                break;
-            default:
-                break;
-            }
-        }
-    } else {
-        if (record->event.pressed) {
-            if (keycode == KC_ESC && *state != os_up_unqueued) {
-                // Cancel oneshot on designated cancel keydown.
-                *state = os_up_unqueued;
-                unregister_code(mod);
-            }
-            if (!is_oneshot_ignored_key(keycode)) {
-                switch (*state) {
-                case os_down_unused:
-                    *state = os_down_used;
-                    break;
-                case os_up_queued:
-                    *state = os_up_used;
-                    break;
-                default:
-                    break;
-                }
-            }
-        } else {
-            if (!is_oneshot_ignored_key(keycode) && *state == os_up_used) {
-                *state = os_up_unqueued;
-                unregister_code(mod);
-            }
-        }
-    }
-}
-
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    update_oneshot(
-        &os_ctl_state, KC_LCTL, OS_CTL,
-        keycode, record
-    );
-    update_oneshot(
-        &os_alt_state, KC_LALT, OS_ALT,
-        keycode, record
-    );
-    update_oneshot(
-        &os_cmd_state, KC_LCMD, OS_CMD,
-        keycode, record
-    );
-    update_oneshot(
-        &os_sft_state, KC_LSFT, OS_SFT,
-        keycode, record
-    );
-
-    if (keycode == CMD_SPC) {
+    if (keycode == HOMEROW) {
         if (record->event.pressed) {
-            register_code(KC_LCMD);
-            register_code(KC_SPC);
+            register_code(KC_LALT);
+            register_code(KC_SLSH);
         } else {
-            unregister_code(KC_SPC);
-            unregister_code(KC_LCMD);
+            unregister_code(KC_SLSH);
+            unregister_code(KC_LALT);
             layer_off(L_MOUSE);
         }
     }
