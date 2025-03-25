@@ -2,7 +2,7 @@
 
 KB := crkbd
 KR := rev1
-KM := default
+KM := devsunb
 
 git-submodule:
 	git submodule update --remote
